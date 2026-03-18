@@ -72,17 +72,17 @@ python scripts/browser.py screenshot
 
 #### Option 1: Project-level (recommended)
 ```bash
-cp -r antigravity-browser/ .claude/plugins/antigravity-browser/
+cp -r browser-automation-skills/ .claude/plugins/browser-automation-skills/
 ```
 
 #### Option 2: User-level (global)
 ```bash
-cp -r antigravity-browser/skills/* ~/.claude/skills/
+cp -r browser-automation-skills/skills/* ~/.claude/skills/
 ```
 
 #### Option 3: Additional directory
 ```bash
-claude --add-dir /path/to/antigravity-browser
+claude --add-dir /path/to/browser-automation-skills
 ```
 
 ### How It Works
@@ -106,7 +106,7 @@ Result → verified via screenshot → reported to user
 ### Directory Structure
 
 ```
-antigravity-browser/
+browser-automation-skills/
 ├── README.md
 ├── scripts/
 │   └── browser.py                  ← Playwright CLI adapter (universal backend)
@@ -182,17 +182,17 @@ python scripts/browser.py screenshot
 
 #### 方式一：项目级（推荐）
 ```bash
-cp -r antigravity-browser/ .claude/plugins/antigravity-browser/
+cp -r browser-automation-skills/ .claude/plugins/browser-automation-skills/
 ```
 
 #### 方式二：用户级（全局）
 ```bash
-cp -r antigravity-browser/skills/* ~/.claude/skills/
+cp -r browser-automation-skills/skills/* ~/.claude/skills/
 ```
 
 #### 方式三：额外目录加载
 ```bash
-claude --add-dir /path/to/antigravity-browser
+claude --add-dir /path/to/browser-automation-skills
 ```
 
 ### 工作原理
@@ -216,7 +216,7 @@ AI 模型 — 匹配请求 → 技能（如 screenshot）
 ### 目录结构
 
 ```
-antigravity-browser/
+browser-automation-skills/
 ├── README.md
 ├── scripts/
 │   └── browser.py                  ← Playwright CLI 适配器（通用后端）

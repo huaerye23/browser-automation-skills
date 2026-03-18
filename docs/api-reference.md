@@ -1,4 +1,4 @@
-# Antigravity Browser Control — API Reference / API 参考
+# Browser Automation — API Reference / API 参考
 
 > **[English](#english)** | **[中文](#中文)**
 
