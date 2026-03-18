@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.png
+*.webp
+.browser_automation_cdp.json
