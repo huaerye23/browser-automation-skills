@@ -112,13 +112,141 @@ async def get_page(browser):
 
 
 async def set_input_lock(page, ignore: bool):
-    """Lock/unlock user input via CDP Input.setIgnoreInputEvents.
-    When locked, user mouse/keyboard input is ignored — model has exclusive control.
-    锁定/解锁用户输入。锁定时用户的鼠标键盘操作被忽略，模型独占控制。"""
-    cdp = await page.context.new_cdp_session(page)
-    await cdp.send("Input.setIgnoreInputEvents", {"ignore": ignore})
-    await cdp.detach()
+    """Lock/unlock user input via visual overlay (same approach as Antigravity).
+    When locked: injects a full-screen overlay that intercepts all user input,
+    shows 'AI is controlling' message, and provides a Stop button.
+    锁定/解锁用户输入（与 Antigravity 相同的覆盖层方式）。
+    锁定时：注入全屏覆盖层拦截所有用户操作，显示控制状态，提供停止按钮。"""
+    if ignore:
+        await page.evaluate("""() => {
+            if (document.getElementById('__browser_automation_overlay')) return;
 
+            const overlay = document.createElement('div');
+            overlay.id = '__browser_automation_overlay';
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                z-index: 2147483647;
+                background: rgba(0, 0, 0, 0.45);
+                display: flex; flex-direction: column;
+                align-items: center; justify-content: center;
+                cursor: not-allowed;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            `;
+
+            // Pulsing border glow
+            const borderEl = document.createElement('div');
+            borderEl.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                border: 3px solid rgba(59, 130, 246, 0.8);
+                box-shadow: inset 0 0 30px rgba(59, 130, 246, 0.15);
+                pointer-events: none;
+                animation: __ba_pulse 2s ease-in-out infinite;
+            `;
+            overlay.appendChild(borderEl);
+
+            // Status card
+            const card = document.createElement('div');
+            card.style.cssText = `
+                background: rgba(15, 23, 42, 0.95);
+                border: 1px solid rgba(59, 130, 246, 0.5);
+                border-radius: 16px;
+                padding: 32px 48px;
+                text-align: center;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(12px);
+            `;
+
+            const icon = document.createElement('div');
+            icon.textContent = '🤖';
+            icon.style.cssText = 'font-size: 48px; margin-bottom: 16px;';
+            card.appendChild(icon);
+
+            const title = document.createElement('div');
+            title.textContent = 'AI is controlling the browser';
+            title.style.cssText = `
+                color: #e2e8f0; font-size: 18px; font-weight: 600;
+                margin-bottom: 8px;
+            `;
+            card.appendChild(title);
+
+            const subtitle = document.createElement('div');
+            subtitle.textContent = 'AI 正在控制浏览器';
+            subtitle.style.cssText = 'color: #94a3b8; font-size: 14px; margin-bottom: 24px;';
+            card.appendChild(subtitle);
+
+            // Animated dots
+            const dots = document.createElement('div');
+            dots.id = '__ba_dots';
+            dots.style.cssText = `
+                display: flex; gap: 8px; justify-content: center; margin-bottom: 24px;
+            `;
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('div');
+                dot.style.cssText = `
+                    width: 10px; height: 10px; border-radius: 50%;
+                    background: #3b82f6;
+                    animation: __ba_bounce 1.4s ease-in-out ${i * 0.16}s infinite;
+                `;
+                dots.appendChild(dot);
+            }
+            card.appendChild(dots);
+
+            // Stop button
+            const btn = document.createElement('button');
+            btn.textContent = '⏹ Stop / 停止';
+            btn.style.cssText = `
+                background: rgba(239, 68, 68, 0.15);
+                border: 1px solid rgba(239, 68, 68, 0.5);
+                color: #fca5a5; padding: 10px 28px;
+                border-radius: 8px; font-size: 14px; font-weight: 500;
+                cursor: pointer; transition: all 0.2s;
+            `;
+            btn.onmouseenter = () => {
+                btn.style.background = 'rgba(239, 68, 68, 0.3)';
+                btn.style.borderColor = '#ef4444';
+                btn.style.color = '#fff';
+            };
+            btn.onmouseleave = () => {
+                btn.style.background = 'rgba(239, 68, 68, 0.15)';
+                btn.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                btn.style.color = '#fca5a5';
+            };
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const el = document.getElementById('__browser_automation_overlay');
+                if (el) el.remove();
+                const style = document.getElementById('__ba_styles');
+                if (style) style.remove();
+                window.__browser_automation_stopped = true;
+            };
+            card.appendChild(btn);
+            overlay.appendChild(card);
+
+            // Keyframes
+            const style = document.createElement('style');
+            style.id = '__ba_styles';
+            style.textContent = `
+                @keyframes __ba_pulse {
+                    0%, 100% { border-color: rgba(59, 130, 246, 0.8); }
+                    50% { border-color: rgba(59, 130, 246, 0.3); }
+                }
+                @keyframes __ba_bounce {
+                    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+                    40% { transform: scale(1); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            document.body.appendChild(overlay);
+            window.__browser_automation_stopped = false;
+        }""")
+    else:
+        await page.evaluate("""() => {
+            const el = document.getElementById('__browser_automation_overlay');
+            if (el) el.remove();
+            const style = document.getElementById('__ba_styles');
+            if (style) style.remove();
+            window.__browser_automation_stopped = false;
+        }""")
 
 async def cmd_status(args):
     p, browser = await get_browser()
@@ -178,7 +306,8 @@ async def cmd_lock(args):
     p, browser = await get_browser()
     page = await get_page(browser)
     await set_input_lock(page, True)
-    print(json.dumps({"status": "ok", "input": "locked", "note": "User input blocked / 用户输入已锁定"}))
+    print(json.dumps({"status": "ok", "input": "locked",
+                      "note": "Overlay active — user input blocked / 覆盖层已激活，用户输入已锁定"}))
 
 
 async def cmd_unlock(args):
