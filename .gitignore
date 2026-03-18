@@ -5,3 +5,4 @@ __pycache__/
 *.png
 *.webp
 .browser_automation_cdp.json
+publish/
